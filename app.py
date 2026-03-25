@@ -131,7 +131,7 @@ st.write("This tool scrapes live blog titles and generates cohesive, branded hea
 # --- SIDEBAR CONFIGURATION ---
 with st.sidebar:
     st.header("⚙️ Configuration")
-    TARGET_URL = st.text_input("Target URL", value="https://endometriose.app/aktuelles-2/")
+    #TARGET_URL = st.text_input("Target URL", value="https://endometriose.app/aktuelles-2/")
     NUM_BLOGS = st.slider("Choose the number of blog posts to process", 1, 10, 5)
     
     st.subheader("🎨 Brand Style")
