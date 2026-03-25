@@ -5,7 +5,7 @@ from PIL import Image
 import base64
 import io
 import os
-
+import zipfile
 
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="Endometriosis Health AI Image Generation", page_icon="🌸")
@@ -21,7 +21,8 @@ BRAND_STYLE = (
     "Subject: Primarily portray women (all ethnicities) in a respectful, non-clinical way. \n\n"
     "Composition: Focus on symbolic, respectful representations of the human body (e.g. silhouettes, hands, abstract forms or cartoon-style). Avoid detailed anatomy.\n\n"
     "No messy backgrounds, no cluttered medical equipment, no bright neon colors.\n\n"
-    "The image must be safe, fully clothed, and suitable for medical education."
+    "The image must be safe, fully clothed, and suitable for medical education.\n\n"
+    "Avoid any writing within the image."
 )
 
 # --- 2. SCRAPING FUNCTION ---
@@ -129,6 +130,9 @@ st.title("🌸 Endo Health: Automated Brand Image Creation")
 st.write("This tool scrapes live blog titles and generates cohesive, branded header imagery.")
 
 # --- SIDEBAR CONFIGURATION ---
+if "results" not in st.session_state: #Initialize
+        st.session_state.results = []
+
 with st.sidebar:
     st.header("⚙️ Configuration")
     #TARGET_URL = st.text_input("Target URL", value="https://endometriose.app/aktuelles-2/")
@@ -145,35 +149,62 @@ if st.button("Start Workflow"):
         st.warning("No blog posts found. Check the website connection.")
     else:
         st.success(f"Starting workflow with {len(blogs)} blog posts. Generating images...")
-        
-        # Create a grid
-        cols = st.columns(2)
-        
-        for idx, blog in enumerate(blogs):
-            with cols[idx % 2]:
-                st.subheader(f"{idx+1}. {blog['title']}")
-                # Create a button linking to the original article
-                st.link_button("View Original Article", blog['url'])
-                
-                # 1. Generate the image
+        st.session_state.results = [] #Clear previous results
+
+        with st.status("🚀 Processing Workflow...", expanded=True) as status:
+            for idx, blog in enumerate(blogs):
+                st.write(f"Generating image {idx+1}/{len(blogs)}: {blog['title']}")
                 img = generate_image_workflow(blog['title'])
+                
                 if img:
-                   st.image(img, width='stretch') #Display
+                    # SAVE to session state instead of just displaying
+                    st.session_state.results.append({
+                        "title": blog['title'],
+                        "url": blog['url'],
+                        "image": img
+                    })
+            status.update(label="All images generated! Click here to see details.", state="complete", expanded=False)
 
-                #3. Prepare the image for download
-                   buf = io.BytesIO()
-                   img.save(buf, format="PNG")
-                   byte_im = buf.getvalue()
+# --- 3. RENDERING & DOWNLOAD (Outside the button block) ---
+if st.session_state.results:
+    st.divider()
+    
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zf:
+        for i, res in enumerate(st.session_state.results):
+            buf = io.BytesIO()
+            res['image'].save(buf, format="PNG")
+            zf.writestr(f"endo_header_{i+1}.png", buf.getvalue())
+            
+    st.download_button(
+        label="Download All Images as ZIP",
+        data=zip_buffer.getvalue(),
+        file_name="endo_health_headers.zip",
+        mime="application/zip",
+        use_container_width=True
+    )
+    
+    st.divider()
 
-                # 4. Add the Download Button right below the picture
-                   st.download_button(
-                        label="Download Header Image",
-                        data=byte_im,
-                        file_name=f"endo_header_{idx+1}.png",
-                        mime="image/png",
-                        key=f"download_btn_{idx}" # Unique key for each button in the loop
-                    )
-                else:
-                    st.error("Image generation failed.")
-                    st.divider()
+    # Display the grid
+    cols = st.columns(2)
+    for idx, res in enumerate(st.session_state.results):
+        with cols[idx % 2]:
+            st.subheader(f"{idx+1}. {res['title']}")
+            st.link_button("View Original Article", res['url'])
+            
+            # Display from state
+            st.image(res['image'], use_container_width=True)
 
+            # Individual Download option
+            buf = io.BytesIO()
+            res['image'].save(buf, format="PNG")
+            
+            st.download_button(
+                label="Download This Image",
+                data=buf.getvalue(),
+                file_name=f"endo_header_{idx+1}.png",
+                mime="image/png",
+                key=f"dl_btn_{idx}" 
+            )
+            st.divider()
