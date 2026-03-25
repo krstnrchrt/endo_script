@@ -26,7 +26,7 @@ BRAND_STYLE = (
 
 # --- 2. SCRAPING FUNCTION ---
 def get_blog_data():
-    url = TARGET_URL #"https://endometriose.app/aktuelles-2/"
+    url = "https://endometriose.app/aktuelles-2/"
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/119.0.0.0 Safari/537.36'}
     
     try:
