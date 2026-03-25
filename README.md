@@ -10,8 +10,8 @@ This repository contains a specialized AI-driven pipeline. The system automates 
 
 ### 2. Installation & Setup
 # Create and activate environment
-conda create -n endo_ai_env python=3.11 -y
-conda activate endo_ai_env
+conda create -n env python=3.11 -y
+conda activate env
 
 # Install dependencies
 pip install streamlit requests beautifulsoup4 Pillow
